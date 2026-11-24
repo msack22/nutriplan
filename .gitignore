@@ -1,0 +1,21 @@
+# --- datos privados: recetas de un curso pago, NO publicar ---
+data/private/*
+# --- build ---
+target/
+node_modules/
+dist/
+.angular/
+# --- IDE / SO ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+# --- secretos y certificados ---
+.env
+infra/certs/out/
+*.p12
+*.jks
+*.pem
+!infra/certs/README.md
+logs/
+!data/private/.gitkeep

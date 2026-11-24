@@ -1,0 +1,249 @@
+{
+  "realm": "nutriplan",
+  "displayName": "NutriPlan",
+  "enabled": true,
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": true,
+  "sslRequired": "external",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "bruteForceProtected": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "es",
+    "en"
+  ],
+  "defaultLocale": "es",
+  "roles": {
+    "realm": [
+      {
+        "name": "uma_authorization",
+        "description": "UMA"
+      },
+      {
+        "name": "offline_access",
+        "description": "Refresh tokens offline"
+      },
+      {
+        "name": "USER",
+        "description": "Usuario final: arma sus planes semanales"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administra el catálogo de recetas"
+      },
+      {
+        "name": "SERVICE",
+        "description": "Rol de máquinas (client credentials) para endpoints /internal"
+      },
+      {
+        "name": "default-roles-nutriplan",
+        "description": "Roles que recibe todo usuario nuevo (auto-registro)",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "USER",
+            "offline_access",
+            "uma_authorization"
+          ]
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-nutriplan"
+  },
+  "clients": [
+    {
+      "clientId": "nutriplan-bff",
+      "name": "NutriPlan Gateway (BFF)",
+      "description": "Cliente CONFIDENCIAL usado por el API Gateway (patrón Backend-For-Frontend). Authorization Code + PKCE. Los tokens quedan en la sesión (Redis), nunca en el navegador.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${BFF_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/login/oauth2/code/*",
+        "http://localhost:4200/login/oauth2/code/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:8080/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-nutriplan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "nutriplan-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "nutriplan-swagger",
+      "name": "Swagger UI",
+      "description": "Cliente PÚBLICO para probar las APIs desde Swagger UI (Authorization Code + PKCE, sin secret).",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:8081/*",
+        "http://localhost:8082/*",
+        "http://localhost:8083/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-nutriplan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "nutriplan-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "planner-service",
+      "name": "Planner Service (machine-to-machine)",
+      "description": "Client Credentials: planner-service se autentica como sí mismo para llamar a pricing-service.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${PLANNER_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "audience-nutriplan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "nutriplan-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "pricing-service",
+      "name": "Pricing Service (machine-to-machine)",
+      "description": "Client Credentials: el job de precios llama a recipe-service /internal sin usuario.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${PRICING_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "audience-nutriplan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "nutriplan-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "nutriplan-dev-cli",
+      "name": "DEV ONLY - CLI/tests",
+      "description": "SOLO DESARROLLO LOCAL. Password grant (ROPC), deprecado en OAuth 2.1. Sirve para probar la API con curl / scripts. Eliminar en producción.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "audience-nutriplan-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "nutriplan-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "email": "demo@nutriplan.local",
+      "firstName": "Demo",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-nutriplan"
+      ]
+    },
+    {
+      "username": "admin",
+      "email": "admin@nutriplan.local",
+      "firstName": "Admin",
+      "lastName": "NutriPlan",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-nutriplan",
+        "ADMIN"
+      ]
+    },
+    {
+      "username": "service-account-planner-service",
+      "enabled": true,
+      "serviceAccountClientId": "planner-service",
+      "realmRoles": [
+        "SERVICE"
+      ]
+    },
+    {
+      "username": "service-account-pricing-service",
+      "enabled": true,
+      "serviceAccountClientId": "pricing-service",
+      "realmRoles": [
+        "SERVICE"
+      ]
+    }
+  ]
+}

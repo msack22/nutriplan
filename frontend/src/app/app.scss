@@ -1,0 +1,32 @@
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: .7rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; display: flex; gap: .4rem; }
+nav { display: flex; gap: .25rem; flex: 1; }
+nav a {
+  padding: .45rem .8rem; border-radius: 999px; color: var(--muted); text-decoration: none; font-weight: 600;
+  font-size: .92rem;
+  &.active { background: var(--primary-soft); color: var(--primary-strong); }
+  &:hover { color: var(--text); }
+}
+.user { display: flex; align-items: center; gap: .6rem; margin-left: auto; }
+.name { font-weight: 600; font-size: .9rem; }
+.menu-btn { display: none; margin-left: auto; background: none; border: 0; font-size: 1.4rem; cursor: pointer; color: var(--text); }
+.toasts { position: fixed; bottom: 1rem; right: 1rem; display: grid; gap: .5rem; z-index: 50; }
+.toast {
+  padding: .7rem 1rem; border-radius: 10px; background: var(--text); color: var(--surface); box-shadow: var(--shadow);
+  max-width: 360px; font-size: .9rem;
+  &.error { background: var(--danger); color: #fff; }
+  &.ok { background: var(--primary-strong); color: #fff; }
+}
+@media (max-width: 860px) {
+  .menu-btn { display: block; }
+  .user .name { display: none; }
+  nav {
+    display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column;
+    background: var(--surface); padding: .75rem; border-bottom: 1px solid var(--line);
+    &.open { display: flex; }
+  }
+}

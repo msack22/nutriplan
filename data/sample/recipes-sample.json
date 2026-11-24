@@ -1,0 +1,140 @@
+{
+ "exportado": "2026-11-24T00:00:00Z",
+ "descripcion": "Muestra PÚBLICA de recetas originales (mismo formato que el export privado).",
+ "catalogo": {
+  "escritas": [
+   {
+    "id": "979ac154-b232-5eb9-bde7-a5e492fe3ad4",
+    "slug": "desayunos-meriendas",
+    "title": "Desayunos y meriendas",
+    "emoji": "🍳",
+    "sort_order": 1,
+    "active": true
+   },
+   {
+    "id": "f6aed832-1958-5d8e-9933-fc97a61bf269",
+    "slug": "comidas-principales",
+    "title": "Comidas principales",
+    "emoji": "🥗",
+    "sort_order": 2,
+    "active": true
+   },
+   {
+    "id": "102f1fc4-35bf-5981-8274-ed57612f4ba6",
+    "slug": "vegetarianas",
+    "title": "Vegetarianas",
+    "emoji": "🥦",
+    "sort_order": 3,
+    "active": true
+   },
+   {
+    "id": "43c2ffef-ffda-5eea-b16c-723653e1475e",
+    "slug": "postres",
+    "title": "Postres",
+    "emoji": "🍫",
+    "sort_order": 4,
+    "active": true
+   }
+  ],
+  "recetas": [
+   {
+    "id": "0e642ff6-0bcd-5521-ba2d-a38e2d5203a3",
+    "category_id": "979ac154-b232-5eb9-bde7-a5e492fe3ad4",
+    "title": "Omelette de espinaca y queso",
+    "sort_order": 1,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "06652491-490b-5f12-b5a1-af4a112dcfa6",
+    "category_id": "979ac154-b232-5eb9-bde7-a5e492fe3ad4",
+    "title": "Yogur con avena y frutos rojos",
+    "sort_order": 2,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "c5feadce-af0b-5026-a35e-19da29dbd73c",
+    "category_id": "f6aed832-1958-5d8e-9933-fc97a61bf269",
+    "title": "Pollo al limón con brócoli",
+    "sort_order": 3,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "c1bbe015-8ebe-50ac-bd4a-c66a82493d04",
+    "category_id": "f6aed832-1958-5d8e-9933-fc97a61bf269",
+    "title": "Merluza al horno con calabaza",
+    "sort_order": 4,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "bbcfbde6-ba29-5d35-b400-7228f5cbc3fa",
+    "category_id": "f6aed832-1958-5d8e-9933-fc97a61bf269",
+    "title": "Wok de carne y vegetales",
+    "sort_order": 5,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "ee666a8e-d129-57d9-97cf-c259c810fc80",
+    "category_id": "102f1fc4-35bf-5981-8274-ed57612f4ba6",
+    "title": "Ensalada de garbanzos",
+    "sort_order": 6,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "a4c92c4d-6aa5-5e04-a028-f36db61f2237",
+    "category_id": "102f1fc4-35bf-5981-8274-ed57612f4ba6",
+    "title": "Tortilla de zapallitos al horno",
+    "sort_order": 7,
+    "subcategoria": null,
+    "active": true
+   },
+   {
+    "id": "cfa9e924-124b-5c80-9836-9ea31b84971c",
+    "category_id": "43c2ffef-ffda-5eea-b16c-723653e1475e",
+    "title": "Mousse de chocolate proteica",
+    "sort_order": 8,
+    "subcategoria": null,
+    "active": true
+   }
+  ]
+ },
+ "cuerpos": {
+  "0e642ff6-0bcd-5521-ba2d-a38e2d5203a3": {
+   "ok": true,
+   "cuerpo": "*Rinde 1 porción*\n\n**Ingredientes:**\n\n- 2 huevos\n- 1 taza de espinaca fresca\n- 30 g de queso port salut\n- Sal y pimienta al gusto\n\n**Procedimiento:**\n\n- Batir los huevos con sal y pimienta.\n- Saltear la espinaca 1 minuto en una sartén antiadherente.\n- Agregar los huevos, cocinar a fuego bajo y sumar el queso antes de doblar.\n\n**Tabla nutricional** — Calorías: 260 kcal · Carbohidratos: 3 g · Proteínas: 20 g · Grasas: 18 g"
+  },
+  "06652491-490b-5f12-b5a1-af4a112dcfa6": {
+   "ok": true,
+   "cuerpo": "*Rinde 1 porción*\n\n**Ingredientes**: 1 taza de yogur natural descremado, 3 cucharadas de avena, 1/2 taza de frutos rojos, 1 cucharadita de semillas de chía.\n\n**Preparación**: Mezclar el yogur con la avena y la chía. Coronar con los frutos rojos.\n\n**Tabla nutricional** — Calorías: 280 kcal · Carbohidratos: 38 g · Proteínas: 16 g · Grasas: 6 g"
+  },
+  "c5feadce-af0b-5026-a35e-19da29dbd73c": {
+   "ok": true,
+   "cuerpo": "*Rinde 2 porciones*\n\n**Ingredientes:**\n\n- 300 g de pechuga de pollo\n- 2 tazas de brócoli\n- 1 limón\n- 1 cucharada de aceite de oliva\n- 1 diente de ajo, picado\n- Sal y pimienta al gusto\n\n**Procedimiento:**\n\n1. Cortar el pollo en tiras y condimentar con sal, pimienta, ajo y jugo de limón.\n2. Dorar el pollo en una sartén con el aceite.\n3. Agregar el brócoli con un chorrito de agua y tapar 5 minutos.\n\n**Tabla nutricional** — Calorías: 320 kcal · Carbohidratos: 9 g · Proteínas: 42 g · Grasas: 12 g"
+  },
+  "c1bbe015-8ebe-50ac-bd4a-c66a82493d04": {
+   "ok": true,
+   "cuerpo": "*Rinde 2 porciones*\n\n**Ingredientes**: 2 filetes de merluza, 400 g de calabaza, 1 cucharada de aceite de oliva, 1 cucharadita de pimentón, sal al gusto.\n\n**Preparación**: Cortar la calabaza en cubos y hornear 20 minutos. Agregar la merluza condimentada con pimentón y hornear 12 minutos más.\n\n**Tabla nutricional** — Calorías: 290 kcal · Carbohidratos: 22 g · Proteínas: 30 g · Grasas: 8 g"
+  },
+  "bbcfbde6-ba29-5d35-b400-7228f5cbc3fa": {
+   "ok": true,
+   "cuerpo": "*Rinde 2 porciones*\n\n**Ingredientes:**\n\n- 250 g de carne magra en tiras\n- 1 morrón rojo\n- 1 cebolla\n- 1 zanahoria\n- 2 cucharadas de salsa de soja\n\n**Procedimiento:**\n\n- Saltear la carne a fuego fuerte y reservar.\n- Saltear los vegetales en tiras 4 minutos.\n- Volver a incorporar la carne con la salsa de soja.\n\n**Tabla nutricional** — Calorías: 340 kcal · Carbohidratos: 14 g · Proteínas: 35 g · Grasas: 15 g"
+  },
+  "ee666a8e-d129-57d9-97cf-c259c810fc80": {
+   "ok": true,
+   "cuerpo": "*Rinde 2 porciones*\n\n**Ingredientes**: 1 lata de garbanzos, 1 tomate, 1 pepino, 1/2 cebolla morada, 1 cucharada de aceite de oliva, jugo de limón, sal al gusto.\n\n**Preparación**: Enjuagar los garbanzos. Cortar los vegetales en cubos, mezclar y condimentar."
+  },
+  "a4c92c4d-6aa5-5e04-a028-f36db61f2237": {
+   "ok": true,
+   "cuerpo": "*Rinde 3 porciones*\n\n**Ingredientes:**\n\n- 3 zapallitos\n- 4 huevos\n- 1 cebolla\n- 50 g de queso rallado\n\n**Procedimiento:**\n\n- Rallar los zapallitos y rehogar con la cebolla.\n- Mezclar con los huevos y el queso.\n- Hornear 25 minutos a 180°C."
+  },
+  "cfa9e924-124b-5c80-9836-9ea31b84971c": {
+   "ok": true,
+   "cuerpo": "*Rinde 2 porciones*\n\n**Ingredientes**: 1 taza de yogur griego, 2 cucharadas de cacao amargo, edulcorante a gusto, 1 cucharadita de esencia de vainilla.\n\n**Preparación**: Mezclar todo hasta integrar y refrigerar 1 hora.\n\n**Tabla nutricional** — Calorías: 140 kcal · Carbohidratos: 9 g · Proteínas: 12 g · Grasas: 6 g"
+  }
+ }
+}

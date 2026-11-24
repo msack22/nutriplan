@@ -1,0 +1,30 @@
+<header class="topbar">
+  <a class="brand" routerLink="/"><span class="logo">🥑</span> NutriPlan</a>
+  @if (auth.isLoggedIn()) {
+    <button class="menu-btn" (click)="menuOpen.set(!menuOpen())" aria-label="Menú">☰</button>
+    <nav [class.open]="menuOpen()">
+      @for (l of links; track l.path) {
+        <a [routerLink]="l.path" routerLinkActive="active" (click)="menuOpen.set(false)">
+          <span aria-hidden="true">{{ l.icon }}</span> {{ l.label }}
+        </a>
+      }
+    </nav>
+    <div class="user">
+      <span class="name">{{ auth.user()?.name }}</span>
+      @if (auth.isAdmin()) { <span class="badge">admin</span> }
+      <button class="btn ghost small" (click)="auth.logout()">Salir</button>
+    </div>
+  } @else if (auth.loaded()) {
+    <button class="btn primary small" (click)="auth.login()">Ingresar</button>
+  }
+</header>
+
+<main class="container">
+  <router-outlet />
+</main>
+
+<div class="toasts" aria-live="polite">
+  @for (t of toasts.toasts(); track t.id) {
+    <div class="toast" [class]="t.kind">{{ t.text }}</div>
+  }
+</div>

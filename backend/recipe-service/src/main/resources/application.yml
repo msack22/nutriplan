@@ -1,0 +1,76 @@
+# ============================================================ recipe-service
+server:
+  port: 8081
+  shutdown: graceful            # termina requests en curso antes de apagarse
+
+spring:
+  application:
+    name: recipe-service
+  threads:
+    virtual:
+      enabled: true             # Java 21 virtual threads para Tomcat y @Async
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/recipes_db
+    username: ${DB_USER:recipe_svc}
+    password: ${DB_PASSWORD:recipe_dev_pw}   # en prod: variable de entorno / Secrets Manager
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false         # buena práctica: nada de queries perezosas desde el controller
+    hibernate:
+      ddl-auto: validate        # el esquema lo maneja Flyway; Hibernate solo valida
+    properties:
+      hibernate:
+        jdbc.batch_size: 50
+        order_inserts: true
+        default_batch_fetch_size: 50
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all                 # el broker confirma cuando todas las réplicas lo tienen
+      properties:
+        enable.idempotence: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+nutriplan:
+  security:
+    issuer: ${KEYCLOAK_ISSUER:http://localhost:8180/realms/nutriplan}
+    jwk-set-uri: ${NUTRIPLAN_SECURITY_JWK_SET_URI:http://localhost:8180/realms/nutriplan/protocol/openid-connect/certs}
+    audience: nutriplan-api
+  ai:
+    provider: ${AI_PROVIDER:ollama}           # ollama | hashing
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      embedding-model: nomic-embed-text
+      chat-model: qwen2.5:7b
+  import:
+    on-startup: true
+    paths:
+      - ../../data/private/recipes-export.json   # recetas reales (NO se suben a git)
+      - ../../data/sample/recipes-sample.json         # muestra pública del repo
+      - /data/recipes.json                            # dentro de Docker
+
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: nutriplan-swagger
+      use-pkce-with-authorization-code-grant: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true           # /actuator/health/liveness y /readiness (Kubernetes)
+
+logging:
+  pattern:
+    correlation: "[%X{correlationId:-}] "

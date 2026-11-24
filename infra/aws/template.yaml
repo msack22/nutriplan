@@ -1,0 +1,34 @@
+# AWS SAM (punto de partida, no desplegado): pricing-service como Lambda + EventBridge Scheduler.
+# Empaquetar con el perfil que agrega spring-cloud-function-adapter-aws (ver docs/09-serverless.md).
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: NutriPlan - actualización semanal de precios (Spring Cloud Function)
+
+Resources:
+  RefreshPricesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: java21
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest
+      CodeUri: ../../backend/pricing-service/target/pricing-service-aws.jar
+      MemorySize: 1024
+      Timeout: 900                          # el job tarda ~10 min
+      SnapStart:
+        ApplyOn: PublishedVersions          # reduce el cold start de Spring
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          SPRING_CLOUD_FUNCTION_DEFINITION: refreshPrices
+          PRICING_SCHEDULER_ENABLED: "false"   # el disparador es EventBridge, no @Scheduled
+          DB_HOST: !Ref DbHost
+          DB_PASSWORD: '{{resolve:secretsmanager:nutriplan/pricing:SecretString:password}}'
+      Events:
+        EveryMonday:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(0 9 ? * MON *)   # 09:00 UTC = 06:00 Argentina
+            ScheduleExpressionTimezone: UTC
+
+Parameters:
+  DbHost:
+    Type: String

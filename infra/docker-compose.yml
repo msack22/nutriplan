@@ -1,0 +1,111 @@
+# =============================================================================
+# Infraestructura local de NutriPlan
+#   docker compose -f infra/docker-compose.yml up -d            -> solo infraestructura
+#   docker compose -f infra/docker-compose.yml --profile apps up -d --build  -> + microservicios
+# Ver docs/02-infraestructura-local.md
+# ⚠️ Credenciales de DESARROLLO. En producción van en un secret manager (AWS Secrets Manager).
+# =============================================================================
+name: nutriplan
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_dev_only}
+    ports: ["3307:3306"]           # 3307 en el host para no chocar con un MySQL local
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root_dev_only}"]
+      interval: 5s
+      retries: 30
+
+  keycloak:                         # Identity Provider (OAuth2 / OpenID Connect)
+    image: quay.io/keycloak/keycloak:26.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin_dev_only}
+      KC_HTTP_PORT: 8180
+      KC_HOSTNAME: http://localhost:8180       # issuer público (lo que ve el navegador)
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"  # los contenedores pueden usar http://keycloak:8180
+      KC_HEALTH_ENABLED: "true"
+      # El realm JSON usa placeholders ${...}: los secrets no quedan escritos en el archivo importado
+      BFF_CLIENT_SECRET: ${BFF_CLIENT_SECRET:-bff-dev-secret-change-me}
+      PLANNER_CLIENT_SECRET: ${PLANNER_CLIENT_SECRET:-planner-dev-secret-change-me}
+      PRICING_CLIENT_SECRET: ${PRICING_CLIENT_SECRET:-pricing-dev-secret-change-me}
+    ports: ["8180:8180"]
+    volumes:
+      - ./keycloak/nutriplan-realm.json:/opt/keycloak/data/import/nutriplan-realm.json:ro
+
+  redis:                            # sesiones del BFF (Spring Session) + caché
+    image: redis:8
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  kafka:                            # broker de mensajes en modo KRaft (sin ZooKeeper)
+    image: apache/kafka:4.1.1
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  kafka-ui:                         # UI web para ver tópicos y mensajes: http://localhost:8090
+    image: kafbat/kafka-ui:latest
+    ports: ["8090:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on: [kafka]
+
+  # ---------------------------------------------------------------- microservicios
+  recipe-service:
+    profiles: ["apps"]
+    build: { context: ../backend, args: { MODULE: recipe-service } }
+    environment: &svc-env
+      SPRING_PROFILES_ACTIVE: docker
+      NUTRIPLAN_SECURITY_JWK_SET_URI: http://keycloak:8180/realms/nutriplan/protocol/openid-connect/certs
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    ports: ["8081:8081"]
+    depends_on: { mysql: { condition: service_healthy } }
+
+  planner-service:
+    profiles: ["apps"]
+    build: { context: ../backend, args: { MODULE: planner-service } }
+    environment:
+      <<: *svc-env
+      SPRING_DATA_REDIS_HOST: redis
+    ports: ["8082:8082"]
+    depends_on: { mysql: { condition: service_healthy } }
+
+  pricing-service:
+    profiles: ["apps"]
+    build: { context: ../backend, args: { MODULE: pricing-service } }
+    environment: *svc-env
+    ports: ["8083:8083"]
+    depends_on: { mysql: { condition: service_healthy } }
+
+  gateway:
+    profiles: ["apps"]
+    build: { context: ../backend, args: { MODULE: gateway } }
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_REDIS_HOST: redis
+    ports: ["8080:8080"]
+
+volumes:
+  mysql-data:
