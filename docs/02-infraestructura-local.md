@@ -89,3 +89,9 @@ Detalles que lo hacen funcionar:
 - El proxy de Angular no cambia el `Host` (`changeOrigin: false`), así el gateway arma el `redirect_uri` con la IP por la que entró el usuario.
 - Los usuarios del realm tienen **id fijo**: recrear Keycloak no cambia el `sub` del JWT y no se pierden los datos del planner.
 - Si el router le cambia la IP a la Mac (DHCP), actualizá `infra/.env` o reservá la IP en el router.
+
+## Hardening de la instalación local
+
+- **Solo 4200 y 8180 escuchan en la red.** MySQL, Redis, Kafka y Kafka UI se publican en `127.0.0.1` (`docker-compose.yml`) y los microservicios usan `server.address: 127.0.0.1` (en Docker se sobreescribe con `SERVER_ADDRESS=0.0.0.0`). Redis guarda las sesiones con tokens: nunca debe quedar abierto.
+- **Secrets por instalación** en `infra/.env` (git lo ignora): `KC_ADMIN_PASSWORD`, `NUTRIPLAN_ADMIN_PASSWORD`, `BFF_CLIENT_SECRET`, `PLANNER_CLIENT_SECRET`, `PRICING_CLIENT_SECRET`. Docker Compose se los pasa a Keycloak y `ecosystem.config.cjs` a los servicios. Si no existen, se usan los de desarrollo del repo.
+- Después de cambiarlos: `docker compose -f infra/docker-compose.yml up -d --force-recreate keycloak` y `scripts/levantar-nutriplan.sh`.

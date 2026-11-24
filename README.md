@@ -100,7 +100,7 @@ cd gateway         && mvn spring-boot:run   # :8080
 cd frontend && npm install && npx ng serve  # http://localhost:4200
 ```
 
-Usuarios de prueba (solo desarrollo): `demo / demo123` y `admin / admin123` (rol ADMIN).
+Usuarios de prueba (solo desarrollo): `demo / demo123` y `admin / admin123` (rol ADMIN). Para una instalación propia, definí passwords y secrets en `infra/.env` (ver [SECURITY.md](SECURITY.md)).
 
 | URL | Qué es |
 |---|---|

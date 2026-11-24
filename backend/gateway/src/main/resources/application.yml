@@ -1,6 +1,7 @@
 # ============================================================ gateway (BFF)
 server:
   port: 8080
+  address: ${SERVER_ADDRESS:127.0.0.1}   # solo localhost: se accede vía gateway/proxy (en Docker: 0.0.0.0)
   forward-headers-strategy: framework   # respeta X-Forwarded-* (proxy de Angular / load balancer)
   servlet:
     session:

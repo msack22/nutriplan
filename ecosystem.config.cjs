@@ -15,7 +15,12 @@ const vars = fs.existsSync(envFile)
 const host = vars.NUTRIPLAN_HOST || 'localhost';
 
 const java = path.join(os.homedir(), 'tools', 'jdk-21.0.13.1+2', 'Contents', 'Home', 'bin', 'java');
-const commonEnv = { KEYCLOAK_ISSUER: `http://${host}:8180/realms/nutriplan` };
+// Los secrets reales viven en infra/.env (ignorado por git); si no están, se usan los de desarrollo.
+const pick = (...keys) => Object.fromEntries(keys.filter((k) => vars[k]).map((k) => [k, vars[k]]));
+const commonEnv = {
+  KEYCLOAK_ISSUER: `http://${host}:8180/realms/nutriplan`,
+  ...pick('BFF_CLIENT_SECRET', 'PLANNER_CLIENT_SECRET', 'PRICING_CLIENT_SECRET'),
+};
 
 const service = (name, dir, xmx = '384m') => ({
   name: `nutriplan-${name}`,

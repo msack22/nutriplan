@@ -1,6 +1,7 @@
 # ============================================================ pricing-service
 server:
   port: 8083
+  address: ${SERVER_ADDRESS:127.0.0.1}   # solo localhost: se accede vía gateway/proxy (en Docker: 0.0.0.0)
   shutdown: graceful
 
 spring:

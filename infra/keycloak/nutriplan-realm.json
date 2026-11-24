@@ -223,7 +223,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin123",
+          "value": "${NUTRIPLAN_ADMIN_PASSWORD}",
           "temporary": false
         }
       ],
