@@ -77,12 +77,12 @@ El frontend se sirve con `npx ng serve` (en `angular.json` está `host: 0.0.0.0`
 
 1. Poné la IP de esta máquina en `infra/.env` (no se sube a git):
    ```
-   NUTRIPLAN_HOST=192.168.1.4
+   NUTRIPLAN_HOST=192.168.1.50   # la IP de tu máquina: ipconfig getifaddr en0
    ```
 2. Recreá Keycloak: `docker compose -f infra/docker-compose.yml up -d --force-recreate keycloak`.
    Keycloak usa `http://<IP>:8180` como URL pública y el realm agrega esa IP a los redirect URIs (placeholders `${NUTRIPLAN_HOST}`).
 3. Reiniciá los servicios (`scripts/levantar-nutriplan.sh`): pm2 lee la misma IP para validar el `iss` de los tokens.
-4. Desde cualquier PC de la red: **http://192.168.1.4:4200**
+4. Desde cualquier PC de la red: **http://<IP-de-tu-máquina>:4200**
 
 Detalles que lo hacen funcionar:
 - El gateway no tiene URLs fijas: vuelve al mismo host después del login (`defaultSuccessUrl("/")`) y usa `{baseUrl}` en el logout.
