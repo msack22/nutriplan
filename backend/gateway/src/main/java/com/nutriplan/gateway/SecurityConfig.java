@@ -1,7 +1,6 @@
 package com.nutriplan.gateway;
 
 import com.nutriplan.common.web.AuditLoggingFilter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -38,12 +37,13 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain bffSecurity(HttpSecurity http, ClientRegistrationRepository registrations,
-                                    @Value("${nutriplan.frontend-url}") String frontendUrl) throws Exception {
+    SecurityFilterChain bffSecurity(HttpSecurity http, ClientRegistrationRepository registrations) throws Exception {
         var pkce = new DefaultOAuth2AuthorizationRequestResolver(registrations, "/oauth2/authorization");
         pkce.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
 
-        var oidcLogout = new SpaLogoutSuccessHandler(registrations, frontendUrl);
+        // "{baseUrl}" = el host por el que entró el usuario (localhost o la IP de la red):
+        // la app funciona desde cualquier PC de la red sin URLs fijas.
+        var oidcLogout = new SpaLogoutSuccessHandler(registrations, "{baseUrl}/");
 
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2Login(o -> o
                         .authorizationEndpoint(a -> a.authorizationRequestResolver(pkce))
-                        .defaultSuccessUrl(frontendUrl, true))
+                        .defaultSuccessUrl("/", true))   // relativo: vuelve al mismo host
                 .oauth2Client(c -> { })
                 .logout(l -> l.logoutSuccessHandler(oidcLogout))
                 .csrf(csrf -> csrf.spa())

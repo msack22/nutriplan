@@ -19,3 +19,4 @@ infra/certs/out/
 !infra/certs/README.md
 logs/
 !data/private/.gitkeep
+infra/.env

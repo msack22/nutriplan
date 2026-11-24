@@ -9,7 +9,12 @@ import com.nutriplan.planner.domain.service.NutritionTargets;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Set;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -17,16 +22,37 @@ public class ProfileService {
 
     private final UserProfileRepository profiles;
     private final Clock clock;
+    private final TransactionTemplate newTransaction;
 
-    public ProfileService(UserProfileRepository profiles, Clock clock) {
+    public ProfileService(UserProfileRepository profiles, Clock clock, PlatformTransactionManager txManager) {
         this.profiles = profiles;
         this.clock = clock;
+        this.newTransaction = new TransactionTemplate(txManager);
+        this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    /** El perfil se crea "lazy" la primera vez que el usuario entra (no hay registro aparte). */
+    /**
+     * El perfil se crea "lazy" la primera vez que el usuario entra (no hay registro aparte).
+     *
+     * <p><b>Race condition (check-then-act)</b>: el frontend pide plan y perfil en paralelo; los dos
+     * requests ven "no existe" e intentan insertar => uno falla por PK duplicada. Solución: insertar
+     * en una transacción NUEVA y, si choca, asumir que el otro request ya lo creó y releerlo con
+     * una lectura con lock (que ve la fila recién confirmada).
+     */
     @Transactional
     public UserProfile getOrCreate(String userId, String displayName) {
-        return profiles.findById(userId).orElseGet(() -> profiles.save(new UserProfile(userId, displayName)));
+        return profiles.findById(userId).orElseGet(() -> createSafely(userId, displayName));
+    }
+
+    private UserProfile createSafely(String userId, String displayName) {
+        try {
+            newTransaction.executeWithoutResult(s -> profiles.saveAndFlush(new UserProfile(userId, displayName)));
+        } catch (DataIntegrityViolationException | OptimisticLockingFailureException alreadyCreated) {
+            // Otro request lo insertó al mismo tiempo: está bien, lo leemos.
+            // (Como el id es asignado -el sub del JWT- Spring Data hace merge() en vez de persist(),
+            // así que el choque puede llegar como PK duplicada o como conflicto de versión.)
+        }
+        return profiles.findLockedById(userId).orElseThrow();
     }
 
     @Transactional

@@ -55,3 +55,37 @@ curl -H "Authorization: Bearer $TOKEN" localhost:8082/api/profile
 - **Keycloak no arranca**: `docker logs nutriplan-keycloak-1`. Si cambiás el realm JSON, recreá el contenedor (`up -d --force-recreate keycloak`): la importación ignora realms existentes.
 - **401 en los servicios**: el `iss` del token debe ser exactamente `http://localhost:8180/realms/nutriplan`.
 - **Puerto 3306 ocupado**: por eso MySQL expone 3307.
+
+## Levantar todo con pm2 (como servicio permanente)
+
+Cada microservicio es un **proceso independiente** (su propia JVM, puerto y base). En local no hace falta abrir 4 terminales: [`ecosystem.config.cjs`](../ecosystem.config.cjs) los registra en **pm2** y [`scripts/levantar-nutriplan.sh`](../scripts/levantar-nutriplan.sh) hace todo en orden:
+
+1. arranca Docker (Colima) si está apagado,
+2. `docker compose up -d` (MySQL, Keycloak, Kafka, Redis),
+3. compila los jars si hay código nuevo (`mvn package`),
+4. `pm2 start ecosystem.config.cjs` (o `restart` si ya estaban).
+
+```bash
+pm2 list                          # estado de nutriplan-recipe / planner / pricing / gateway
+pm2 logs nutriplan-planner        # logs de un servicio
+pm2 restart nutriplan-gateway     # reiniciar SOLO uno (la gracia de los microservicios)
+```
+
+El frontend se sirve con `npx ng serve` (en `angular.json` está `host: 0.0.0.0`).
+
+## Acceso desde otras PCs de la red (LAN)
+
+1. Poné la IP de esta máquina en `infra/.env` (no se sube a git):
+   ```
+   NUTRIPLAN_HOST=192.168.1.4
+   ```
+2. Recreá Keycloak: `docker compose -f infra/docker-compose.yml up -d --force-recreate keycloak`.
+   Keycloak usa `http://<IP>:8180` como URL pública y el realm agrega esa IP a los redirect URIs (placeholders `${NUTRIPLAN_HOST}`).
+3. Reiniciá los servicios (`scripts/levantar-nutriplan.sh`): pm2 lee la misma IP para validar el `iss` de los tokens.
+4. Desde cualquier PC de la red: **http://192.168.1.4:4200**
+
+Detalles que lo hacen funcionar:
+- El gateway no tiene URLs fijas: vuelve al mismo host después del login (`defaultSuccessUrl("/")`) y usa `{baseUrl}` en el logout.
+- El proxy de Angular no cambia el `Host` (`changeOrigin: false`), así el gateway arma el `redirect_uri` con la IP por la que entró el usuario.
+- Los usuarios del realm tienen **id fijo**: recrear Keycloak no cambia el `sub` del JWT y no se pierden los datos del planner.
+- Si el router le cambia la IP a la Mac (DHCP), actualizá `infra/.env` o reservá la IP en el router.

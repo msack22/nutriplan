@@ -28,7 +28,10 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin_dev_only}
       KC_HTTP_PORT: 8180
-      KC_HOSTNAME: http://localhost:8180       # issuer público (lo que ve el navegador)
+      # Host público de Keycloak (lo que ve el navegador). Para usar la app desde otra PC de la red,
+      # poné NUTRIPLAN_HOST=<IP de esta Mac> en infra/.env (ver docs/02-infraestructura-local.md)
+      KC_HOSTNAME: http://${NUTRIPLAN_HOST:-localhost}:8180
+      NUTRIPLAN_HOST: ${NUTRIPLAN_HOST:-localhost}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"  # los contenedores pueden usar http://keycloak:8180
       KC_HEALTH_ENABLED: "true"
       # El realm JSON usa placeholders ${...}: los secrets no quedan escritos en el archivo importado

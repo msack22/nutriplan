@@ -42,7 +42,6 @@ nutriplan:
   security:
     resource-server:
       enabled: false                    # el gateway es OAuth2 CLIENT (login), no resource server
-  frontend-url: ${FRONTEND_URL:http://localhost:4200/}
   routes:
     recipe: ${RECIPE_SERVICE_URL:http://localhost:8081}
     planner: ${PLANNER_SERVICE_URL:http://localhost:8082}

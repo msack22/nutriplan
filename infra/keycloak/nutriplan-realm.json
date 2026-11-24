@@ -67,15 +67,17 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "http://localhost:8080/login/oauth2/code/*",
-        "http://localhost:4200/login/oauth2/code/*"
+        "http://localhost:4200/login/oauth2/code/*",
+        "http://${NUTRIPLAN_HOST}:4200/login/oauth2/code/*"
       ],
       "webOrigins": [
         "http://localhost:4200",
-        "http://localhost:8080"
+        "http://localhost:8080",
+        "http://${NUTRIPLAN_HOST}:4200"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:8080/*"
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:8080/*##http://${NUTRIPLAN_HOST}:4200/*"
       },
       "protocolMappers": [
         {
@@ -208,7 +210,8 @@
       ],
       "realmRoles": [
         "default-roles-nutriplan"
-      ]
+      ],
+      "id": "3cc479ca-0980-426a-b55e-fbef921e19de"
     },
     {
       "username": "admin",
@@ -227,7 +230,8 @@
       "realmRoles": [
         "default-roles-nutriplan",
         "ADMIN"
-      ]
+      ],
+      "id": "7b0f6c1e-2d4a-4c8e-9a51-3f2e8d6b9c10"
     },
     {
       "username": "service-account-planner-service",
