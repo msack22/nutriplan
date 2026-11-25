@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,7 @@ import org.springframework.stereotype.Service;
  *
  * <ul>
  *   <li>Corre en un <b>virtual thread</b> (Java 21): no bloquea hilos de Tomcat.</li>
- *   <li>{@link Semaphore}(1): un solo borrador a la vez contra el LLM (protege la CPU).</li>
+ *   <li>{@link LlmGate}: un solo pedido al LLM a la vez y los borradores tienen prioridad.</li>
  *   <li>Un usuario no puede lanzar otro mientras tiene uno en curso (evita abuso).</li>
  *   <li>Los trabajos viven en memoria 1 h (son descartables: el borrador no se guarda).</li>
  * </ul>
@@ -38,13 +37,12 @@ public class RecipeDraftService {
     }
 
     private final RecipeDraftGenerator generator;
-    private final AiWorkload workload;
+    private final LlmGate gate;
     private final Map<String, DraftJob> jobs = new ConcurrentHashMap<>();
-    private final Semaphore llm = new Semaphore(1);
 
-    public RecipeDraftService(RecipeDraftGenerator generator, AiWorkload workload) {
+    public RecipeDraftService(RecipeDraftGenerator generator, LlmGate gate) {
         this.generator = generator;
-        this.workload = workload;
+        this.gate = gate;
     }
 
     public DraftJob start(String userId, DraftRequest request) {
@@ -56,7 +54,6 @@ public class RecipeDraftService {
         }
         DraftJob job = new DraftJob(UUID.randomUUID().toString(), userId, Status.PENDING, null, null, Instant.now(), null);
         jobs.put(job.id(), job);
-        workload.beginInteractive();   // pausa el job de fondo desde YA
         Thread.ofVirtual().name("recipe-draft-", 0).start(() -> run(job, request));
         return job;
     }
@@ -71,23 +68,13 @@ public class RecipeDraftService {
 
     private void run(DraftJob job, DraftRequest request) {
         try {
-            llm.acquire();
-            try {
-                RecipeDraft draft = generator.generate(request);
-                jobs.put(job.id(), new DraftJob(job.id(), job.userId(), Status.DONE, draft, null, job.createdAt(), Instant.now()));
-                log.info("Borrador {} generado en {} s", job.id(), Duration.between(job.createdAt(), Instant.now()).toSeconds());
-            } finally {
-                llm.release();
-            }
-        } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
+            RecipeDraft draft = gate.interactive(() -> generator.generate(request));
+            jobs.put(job.id(), new DraftJob(job.id(), job.userId(), Status.DONE, draft, null, job.createdAt(), Instant.now()));
+            log.info("Borrador {} generado en {} s", job.id(), Duration.between(job.createdAt(), Instant.now()).toSeconds());
+        } catch (RuntimeException e) {
             log.warn("Falló el borrador {}: {}", job.id(), e.getMessage());
             jobs.put(job.id(), new DraftJob(job.id(), job.userId(), Status.FAILED, null,
                     "No se pudo generar la receta. Probá de nuevo o cargala a mano.", job.createdAt(), Instant.now()));
-        } finally {
-            workload.endInteractive();
         }
     }
 

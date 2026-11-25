@@ -25,8 +25,9 @@ Solo ~17 recetas traían tabla nutricional. `OllamaNutritionEstimator` le pide a
 `POST /api/recipes/drafts` recibe los ingredientes que tiene el usuario y responde **202 Accepted** con un id. Generar una receta con `qwen2.5:7b` en CPU tarda 2-4 minutos, así que:
 
 - el trabajo corre en un **virtual thread** y el frontend hace **polling** (`GET /api/recipes/drafts/{id}` cada 3 s con `timer + switchMap + takeWhile`);
-- un `Semaphore(1)` limita a un borrador a la vez contra el LLM y cada usuario puede tener uno en curso;
-- **prioridad**: `AiWorkload` pausa la estimación de nutrición de fondo mientras haya un usuario esperando;
+- **`LlmGate`: una sola cola hacia el LLM con prioridad.** Problema real encontrado: sin GPU, Ollama atendía 3-4 pedidos en paralelo (estimación de fondo + borradores) y cada uno pasaba de ~1,5 min a ~10 min, superando el timeout. Ahora va un pedido a la vez y los del usuario pasan antes que los de fondo (test: `interactiveCallsGoBeforeQueuedBackgroundWork`);
+- timeout del cliente HTTP a Ollama: 10 min (con 2 min el pedido se cortaba y fallaba);
+- cada usuario puede tener un borrador en curso;
 - el borrador **no se guarda**: el usuario lo revisa y lo confirma con el formulario (`POST /api/recipes`).
 
 Se probó también `qwen2.5:1.5b`: tarda ~1,5 min pero inventa cantidades ("2 cucharadas de zapallito"); se priorizó calidad.

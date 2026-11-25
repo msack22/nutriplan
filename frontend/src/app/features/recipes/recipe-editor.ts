@@ -33,8 +33,8 @@ import { ToastService } from '../../core/toast.service';
         @for (i of aiIngredients(); track i) {
           <span class="chip on">{{ i }} <button class="x" (click)="removeAiIngredient(i)" aria-label="Quitar">✕</button></span>
         }
-        <input class="chip-input" [(ngModel)]="aiInput" (keydown.enter)="addAiIngredient($event)" (keydown.,)="addAiIngredient($event)"
-               placeholder="Ej: pollo, zapallito, queso… (Enter para agregar)" [disabled]="generating()" />
+        <input class="chip-input" [value]="aiInput()" (input)="aiInput.set($any($event.target).value)" (keydown)="onAiKey($event)"
+               (blur)="commitAiInput()" placeholder="Ej: pollo, zapallito, queso… (Enter o coma para agregar)" [disabled]="generating()" />
       </div>
       <div class="row">
         <select [(ngModel)]="aiMeal" [disabled]="generating()">
@@ -43,14 +43,14 @@ import { ToastService } from '../../core/toast.service';
         </select>
         <label class="check">Porciones <input type="number" min="1" max="8" [(ngModel)]="aiServings" class="num" [disabled]="generating()" /></label>
         <input class="grow" [(ngModel)]="aiNotes" placeholder="Preferencias (opcional): al horno, sin lácteos, rápida…" maxlength="200" [disabled]="generating()" />
-        <button class="btn primary" (click)="generate()" [disabled]="generating() || aiIngredients().length === 0">
+        <button class="btn primary" (click)="generate()" [disabled]="generating() || (aiIngredients().length === 0 && !aiInput().trim())">
           {{ generating() ? 'Generando…' : '✨ Generar receta' }}
         </button>
       </div>
       @if (generating()) {
         <div class="progress-row">
           <div class="progress"><span [style.width.%]="progressPct()"></span></div>
-          <span class="muted small">La IA corre en tu computadora: suele tardar 2-4 minutos ({{ elapsed() }} s). Podés ir completando el formulario.</span>
+          <span class="muted small">La IA corre en tu computadora (sin GPU): suele tardar 2-5 minutos ({{ elapsed() }} s). Podés ir completando el formulario.</span>
         </div>
       }
     </section>
@@ -146,7 +146,7 @@ export class RecipeEditor implements OnInit {
 
   // ---- IA
   protected readonly aiIngredients = signal<string[]>([]);
-  protected aiInput = '';
+  protected readonly aiInput = signal('');
   protected aiMeal: MealType | null = null;
   protected aiServings = 2;
   protected aiNotes = '';
@@ -181,11 +181,23 @@ export class RecipeEditor implements OnInit {
     }
   }
 
-  addAiIngredient(event: Event): void {
-    event.preventDefault();
-    const values = this.aiInput.split(',').map((s) => s.trim()).filter((s) => s.length > 0 && s.length <= 60);
-    this.aiIngredients.update((list) => [...new Set([...list, ...values])].slice(0, 15));
-    this.aiInput = '';
+  onAiKey(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      this.commitAiInput();
+      (event.target as HTMLInputElement).value = '';   // por si el binding no llegó a refrescarse
+    } else if (event.key === 'Backspace' && this.aiInput() === '') {
+      this.aiIngredients.update((list) => list.slice(0, -1));   // borrar el último chip
+    }
+  }
+
+  /** Pasa lo escrito a chips (acepta varios separados por coma). */
+  commitAiInput(): void {
+    const values = this.aiInput().split(',').map((v) => v.trim()).filter((v) => v.length > 0 && v.length <= 60);
+    if (values.length) {
+      this.aiIngredients.update((list) => [...new Set([...list, ...values])].slice(0, 15));
+    }
+    this.aiInput.set('');
   }
 
   removeAiIngredient(value: string): void {
@@ -197,7 +209,7 @@ export class RecipeEditor implements OnInit {
   }
 
   generate(): void {
-    if (this.aiInput.trim()) this.addAiIngredient(new Event('submit'));
+    this.commitAiInput();
     this.generating.set(true);
     this.elapsed.set(0);
     const started = Date.now();

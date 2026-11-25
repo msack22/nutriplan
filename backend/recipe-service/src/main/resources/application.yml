@@ -49,6 +49,8 @@ nutriplan:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       embedding-model: nomic-embed-text
       chat-model: qwen2.5:7b
+      # En CPU (sin GPU) una receta puede tardar 2-5 min: con un timeout corto el pedido se corta y falla
+      timeout: 10m
   import:
     on-startup: true
     paths:

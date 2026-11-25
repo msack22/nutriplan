@@ -33,15 +33,15 @@ public class NutritionEstimationService {
     private final RecipeRepository recipes;
     private final NutritionEstimator estimator;
     private final TransactionTemplate tx;
-    private final AiWorkload workload;
+    private final LlmGate gate;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public NutritionEstimationService(RecipeRepository recipes, NutritionEstimator estimator, TransactionTemplate tx,
-                                      AiWorkload workload) {
+                                      LlmGate gate) {
         this.recipes = recipes;
         this.estimator = estimator;
         this.tx = tx;
-        this.workload = workload;
+        this.gate = gate;
     }
 
     public boolean isRunning() {
@@ -59,14 +59,14 @@ public class NutritionEstimationService {
             log.info("Estimando nutrición de {} recetas con LLM...", ids.size());
             int ok = 0;
             for (Long id : ids) {
-                workload.yieldToInteractive();   // si un usuario está generando un borrador, esperamos
                 record Input(String title, int servings, List<String> lines) { }
                 Input input = tx.execute(s -> {
                     Recipe r = recipes.findWithIngredientsById(id).orElseThrow();
                     return new Input(r.getTitle(), r.getServings(),
                             r.getIngredients().stream().map(RecipeIngredient::getRawText).toList());
                 });
-                var estimate = estimator.estimatePerServing(input.title(), input.servings(), input.lines());
+                // de FONDO: cede el turno si un usuario está esperando un borrador
+                var estimate = gate.background(() -> estimator.estimatePerServing(input.title(), input.servings(), input.lines()));
                 if (estimate.isPresent()) {
                     tx.executeWithoutResult(s -> apply(id, estimate.get(), NutritionSource.ESTIMATED));
                     ok++;
@@ -81,7 +81,6 @@ public class NutritionEstimationService {
     /** Estima UNA receta (recién creada por un usuario) en segundo plano. */
     @Async
     public void estimateOneAsync(long id) {
-        workload.yieldToInteractive();
         record Input(String title, int servings, List<String> lines) { }
         Input input = tx.execute(s -> recipes.findWithIngredientsById(id)
                 .map(r -> new Input(r.getTitle(), r.getServings(),
@@ -90,7 +89,7 @@ public class NutritionEstimationService {
         if (input == null) {
             return;
         }
-        estimator.estimatePerServing(input.title(), input.servings(), input.lines())
+        gate.background(() -> estimator.estimatePerServing(input.title(), input.servings(), input.lines()))
                 .ifPresent(n -> tx.executeWithoutResult(s -> apply(id, n, NutritionSource.ESTIMATED)));
     }
 

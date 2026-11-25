@@ -21,7 +21,7 @@ public record AiProperties(String provider, Ollama ollama) {
             baseUrl = baseUrl == null ? "http://localhost:11434" : baseUrl;
             embeddingModel = embeddingModel == null ? "nomic-embed-text" : embeddingModel;
             chatModel = chatModel == null ? "qwen2.5:7b" : chatModel;
-            timeout = timeout == null ? Duration.ofMinutes(2) : timeout;
+            timeout = timeout == null ? Duration.ofMinutes(10) : timeout;   // CPU sin GPU: respuestas lentas
         }
     }
 }
