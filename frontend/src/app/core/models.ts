@@ -35,6 +35,7 @@ export interface RecipeSummary {
   nutritionSource: NutritionSource;
   mealTypes: MealType[];
   tags: string[];
+  custom: boolean;
 }
 
 export interface Ingredient {
@@ -61,6 +62,37 @@ export interface RecipeDetail {
   steps: string[];
   notes: string | null;
   videoUrl: string | null;
+  custom: boolean;
+  editable: boolean;
+}
+
+/** Alta/edición de receta propia (ingredientes como texto libre: "200 g de pollo"). */
+export interface RecipeCommand {
+  title: string;
+  categorySlug: string;
+  servings: number;
+  mealTypes: MealType[];
+  ingredients: string[];
+  steps: string[];
+  notes: string | null;
+  nutritionPerServing: Nutrition | null;
+}
+
+export interface RecipeDraft {
+  title: string;
+  servings: number;
+  ingredients: string[];
+  steps: string[];
+  nutritionPerServing: Nutrition | null;
+  generatedBy: string;
+}
+
+export interface DraftJob {
+  id: string;
+  status: 'PENDING' | 'DONE' | 'FAILED';
+  draft: RecipeDraft | null;
+  error: string | null;
+  createdAt: string;
 }
 
 export interface ScoredRecipe {

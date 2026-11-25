@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { MEALS, MEAL_LABEL, TAG_LABEL } from '../../core/labels';
 import { Category, MealType, RecipeSummary } from '../../core/models';
@@ -7,13 +8,14 @@ import { RecipeCard } from './recipe-card';
 
 @Component({
   selector: 'app-recipe-list',
-  imports: [FormsModule, RecipeCard],
+  imports: [FormsModule, RouterLink, RecipeCard],
   template: `
     <div class="page-head">
       <div>
         <h1>Recetas</h1>
         <p class="muted">{{ total() }} recetas saludables. Probá la búsqueda inteligente: describí lo que tenés ganas de comer.</p>
       </div>
+      <a class="btn primary" routerLink="/recetas/nueva">➕ Crear mi receta</a>
     </div>
 
     <div class="card filters">
@@ -24,7 +26,8 @@ import { RecipeCard } from './recipe-card';
         <button class="btn primary" (click)="search()">Buscar</button>
       </div>
       <div class="row">
-        <button class="chip" [class.on]="!category()" (click)="setCategory(null)">Todas</button>
+        <button class="chip" [class.on]="!category() && !mine()" (click)="setCategory(null)">Todas</button>
+        <button class="chip" [class.on]="mine()" (click)="toggleMine()">⭐ Mis recetas</button>
         @for (c of categories(); track c.slug) {
           <button class="chip" [class.on]="category() === c.slug" (click)="setCategory(c.slug)">{{ c.emoji }} {{ c.name }}</button>
         }
@@ -80,6 +83,7 @@ export class RecipeList {
   protected readonly hasMore = signal(false);
   protected readonly semantic = signal(false);
   protected readonly category = signal<string | null>(null);
+  protected readonly mine = signal(false);
 
   protected query = '';
   protected mealType: MealType | null = null;
@@ -92,8 +96,16 @@ export class RecipeList {
     this.search();
   }
 
+  toggleMine(): void {
+    this.mine.set(!this.mine());
+    this.category.set(null);
+    this.semantic.set(false);
+    this.search();
+  }
+
   setCategory(slug: string | null): void {
     this.category.set(slug);
+    this.mine.set(false);
     this.semantic.set(false);
     this.search();
   }
@@ -122,7 +134,7 @@ export class RecipeList {
 
   private fetch(append: boolean): void {
     this.api.recipes({ q: this.query, category: this.category(), mealType: this.mealType, tag: this.tag,
-      maxKcal: this.maxKcal }, this.page).subscribe({
+      maxKcal: this.maxKcal, mine: this.mine() ? 'true' : null }, this.page).subscribe({
       next: (p) => {
         const mapped = p.content.map((r) => ({ recipe: r, score: null }));
         this.results.update((prev) => (append ? [...prev, ...mapped] : mapped));

@@ -5,6 +5,8 @@ import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.forMea
 import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.inCategory;
 import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.maxKcal;
 import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.minProtein;
+import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.onlyMine;
+import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.visibleTo;
 import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.titleContains;
 import static com.nutriplan.recipe.domain.repository.RecipeSpecifications.withTag;
 
@@ -48,8 +50,10 @@ public class RecipeQueryService {
         this.mapper = mapper;
     }
 
-    public PageResponse<RecipeSummaryDto> search(RecipeSearchCriteria c, Pageable pageable) {
+    public PageResponse<RecipeSummaryDto> search(RecipeSearchCriteria c, Pageable pageable, String userId) {
         Specification<Recipe> spec = active()
+                .and(visibleTo(userId))
+                .and(onlyMine(c.mine(), userId))
                 .and(titleContains(c.text()))
                 .and(inCategory(c.category()))
                 .and(forMeal(c.mealType()))
@@ -59,15 +63,18 @@ public class RecipeQueryService {
         return PageResponse.of(recipes.findAll(spec, pageable), mapper::toSummary);
     }
 
-    public RecipeDetailDto getDetail(long id, Integer servings) {
+    /** Anti-IDOR: la receta privada de otro usuario "no existe" (404). */
+    public RecipeDetailDto getDetail(long id, Integer servings, String userId) {
         Recipe recipe = recipes.findWithIngredientsById(id)
+                .filter(r -> r.isVisibleTo(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("Receta", id));
-        return toDetail(recipe, servings == null ? recipe.getServings() : servings);
+        return toDetail(recipe, servings == null ? recipe.getServings() : servings, userId);
     }
 
-    public List<RecipeDetailDto> getDetails(Collection<Long> ids) {
+    public List<RecipeDetailDto> getDetails(Collection<Long> ids, String userId) {
         return recipes.findWithIngredientsByIdIn(ids).stream()
-                .map(r -> toDetail(r, r.getServings()))
+                .filter(r -> r.getOwnerId() == null || r.getOwnerId().equals(userId))
+                .map(r -> toDetail(r, r.getServings(), userId))
                 .toList();
     }
 
@@ -80,7 +87,7 @@ public class RecipeQueryService {
     }
 
     /** Escala ingredientes y macros: factor = porciones pedidas / porciones originales. */
-    private RecipeDetailDto toDetail(Recipe r, int servings) {
+    private RecipeDetailDto toDetail(Recipe r, int servings, String userId) {
         if (servings < 1 || servings > 50) {
             throw new IllegalArgumentException("Las porciones deben estar entre 1 y 50");
         }
@@ -94,7 +101,7 @@ public class RecipeQueryService {
                 // Hibernate, Jackson la recorrería fuera de la sesión => LazyInitializationException.
                 r.getNutritionSource(), Set.copyOf(r.getMealTypes()), Set.copyOf(r.getTags()), ingredients,
                 List.copyOf(r.getSteps()),
-                r.getNotes(), r.getVideoUrl(), r.getVersion());
+                r.getNotes(), r.getVideoUrl(), r.getVersion(), r.isCustom(), r.isOwnedBy(userId));
     }
 
     private static IngredientDto scale(RecipeIngredient i, double factor) {

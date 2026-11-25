@@ -29,5 +29,7 @@ public record RecipeDetailDto(
         List<String> steps,
         String notes,
         String videoUrl,
-        long version) {
+        long version,
+        boolean custom,
+        boolean editable) {
 }

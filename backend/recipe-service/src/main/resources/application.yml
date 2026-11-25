@@ -52,7 +52,7 @@ nutriplan:
   import:
     on-startup: true
     paths:
-      - ../../data/private/recipes-export.json   # recetas reales (NO se suben a git)
+      - ../../data/private                            # recetas reales: export + extraídas de PDFs (NO se suben a git)
       - ../../data/sample/recipes-sample.json         # muestra pública del repo
       - /data/recipes.json                            # dentro de Docker
 

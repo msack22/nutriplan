@@ -22,6 +22,7 @@ public interface RecipeMapper {
     @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "categoryEmoji", source = "category.emoji")
     @Mapping(target = "nutritionPerServing", source = "nutrition")
+    @Mapping(target = "custom", expression = "java(recipe.isCustom())")
     RecipeSummaryDto toSummary(Recipe recipe);
 
     @Mapping(target = "nutritionPerServing", source = "recipe.nutrition")

@@ -47,8 +47,8 @@ public class SemanticSearchService {
         this.mapper = mapper;
     }
 
-    public List<ScoredRecipeDto> search(String query, MealType mealType, int limit) {
-        Map<Long, Recipe> catalog = activeCatalog();
+    public List<ScoredRecipeDto> search(String query, MealType mealType, int limit, String userId) {
+        Map<Long, Recipe> catalog = visibleCatalog(userId);
         List<ScoredId> hits = index.search(embeddings.embedQuery(query), limit, id -> {
             Recipe r = catalog.get(id);
             return r != null && (mealType == null || r.isSuitableFor(mealType));
@@ -58,11 +58,14 @@ public class SemanticSearchService {
                 .toList();
     }
 
-    public List<ScoredRecipeDto> similarTo(long recipeId, int limit) {
+    public List<ScoredRecipeDto> similarTo(long recipeId, int limit, String userId) {
+        Map<Long, Recipe> catalog = visibleCatalog(userId);
+        if (!catalog.containsKey(recipeId)) {
+            throw new ResourceNotFoundException("Receta", recipeId);
+        }
         float[] vector = embeddingRepository.findById(recipeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Embedding de receta", recipeId))
                 .getVector();
-        Map<Long, Recipe> catalog = activeCatalog();
         return index.search(vector, limit, id -> id != recipeId && catalog.containsKey(id)).stream()
                 .map(h -> new ScoredRecipeDto(mapper.toSummary(catalog.get(h.recipeId())), round(h.score())))
                 .toList();
@@ -72,10 +75,10 @@ public class SemanticSearchService {
      * Candidatas para el generador de planes: filtra por momento del día, tags e ingredientes
      * excluidos; si hay "preferencia" ordena por similitud semántica.
      */
-    public List<RecipeCandidateDto> candidates(CandidateRequest req) {
+    public List<RecipeCandidateDto> candidates(CandidateRequest req, String userId) {
         List<String> excluded = req.excludedIngredients().stream()
                 .map(s -> s.toLowerCase(Locale.ROOT).strip()).filter(s -> !s.isEmpty()).toList();
-        Map<Long, Recipe> filtered = recipes.findByActiveTrue().stream()
+        Map<Long, Recipe> filtered = recipes.findVisibleTo(userId).stream()
                 .filter(r -> req.mealTypes().isEmpty() || req.mealTypes().stream().anyMatch(r::isSuitableFor))
                 .filter(r -> r.getTags().containsAll(req.requiredTags()))
                 .filter(r -> excluded.isEmpty() || r.getIngredients().stream()
@@ -95,8 +98,9 @@ public class SemanticSearchService {
                 .toList();
     }
 
-    private Map<Long, Recipe> activeCatalog() {
-        return recipes.findByActiveTrue().stream().collect(Collectors.toMap(Recipe::getId, Function.identity()));
+    /** Catálogo + recetas propias del usuario: las privadas de otros nunca aparecen en búsquedas. */
+    private Map<Long, Recipe> visibleCatalog(String userId) {
+        return recipes.findVisibleTo(userId).stream().collect(Collectors.toMap(Recipe::getId, Function.identity()));
     }
 
     private static double round(double v) {

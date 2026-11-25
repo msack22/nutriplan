@@ -6,7 +6,7 @@ import com.nutriplan.recipe.domain.model.Nutrition;
 import com.nutriplan.recipe.domain.model.NutritionSource;
 import java.util.Set;
 
-/** Vista resumida para listados. Los DTO desacoplan la API del modelo JPA. */
+/** Vista resumida para listados. {@code custom} = receta propia del usuario. */
 public record RecipeSummaryDto(
         Long id,
         String title,
@@ -17,5 +17,6 @@ public record RecipeSummaryDto(
         Nutrition nutritionPerServing,
         NutritionSource nutritionSource,
         Set<MealType> mealTypes,
-        Set<DietTag> tags) {
+        Set<DietTag> tags,
+        boolean custom) {
 }

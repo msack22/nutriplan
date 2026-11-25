@@ -21,6 +21,18 @@ public final class RecipeSpecifications {
         return (root, q, cb) -> cb.isTrue(root.get("active"));
     }
 
+    /** Catálogo público + recetas propias del usuario (nunca las privadas de otros). */
+    public static Specification<Recipe> visibleTo(String userId) {
+        return (root, q, cb) -> cb.or(cb.isNull(root.get("ownerId")), cb.equal(root.get("ownerId"), userId));
+    }
+
+    public static Specification<Recipe> onlyMine(boolean mine, String userId) {
+        if (!mine) {
+            return Specification.unrestricted();
+        }
+        return (root, q, cb) -> cb.equal(root.get("ownerId"), userId);
+    }
+
     public static Specification<Recipe> titleContains(String text) {
         if (text == null || text.isBlank()) {
             return Specification.unrestricted();

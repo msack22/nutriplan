@@ -11,6 +11,18 @@ export const routes: Routes = [
     title: 'Recetas · NutriPlan',
   },
   {
+    path: 'recetas/nueva',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/recipes/recipe-editor').then((m) => m.RecipeEditor),
+    title: 'Nueva receta · NutriPlan',
+  },
+  {
+    path: 'recetas/:id/editar',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/recipes/recipe-editor').then((m) => m.RecipeEditor),
+    title: 'Editar receta · NutriPlan',
+  },
+  {
     path: 'recetas/:id',
     canActivate: [authGuard],
     loadComponent: () => import('./features/recipes/recipe-detail').then((m) => m.RecipeDetailPage),

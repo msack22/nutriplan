@@ -116,6 +116,10 @@ public class Recipe {
     @Column(name = "video_url", length = 500)
     private String videoUrl;
 
+    /** null = receta del catálogo (pública); si no, el "sub" del usuario que la creó (privada). */
+    @Column(name = "owner_id", length = 64)
+    private String ownerId;
+
     private boolean active = true;
 
     @Version
@@ -138,7 +142,34 @@ public class Recipe {
         changeCategory(category);
     }
 
+    /** Receta propia de un usuario (solo la ve él). */
+    public static Recipe ownedBy(String ownerId, String title, Category category) {
+        if (ownerId == null || ownerId.isBlank()) {
+            throw new IllegalArgumentException("Una receta propia necesita dueño");
+        }
+        Recipe recipe = new Recipe(null, title, category);
+        recipe.ownerId = ownerId;
+        return recipe;
+    }
+
     // ----------------------------------------------------------------- comportamiento
+
+    public boolean isCustom() {
+        return ownerId != null;
+    }
+
+    /** Regla de visibilidad: catálogo para todos, recetas propias solo para su dueño. */
+    public boolean isVisibleTo(String userId) {
+        return active && (ownerId == null || ownerId.equals(userId));
+    }
+
+    public boolean isOwnedBy(String userId) {
+        return ownerId != null && ownerId.equals(userId);
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
 
     public void rename(String newTitle) {
         if (newTitle == null || newTitle.isBlank()) {
@@ -261,6 +292,10 @@ public class Recipe {
 
     public String getVideoUrl() {
         return videoUrl;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
     }
 
     public boolean isActive() {

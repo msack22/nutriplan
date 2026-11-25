@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
-  Category, DayOfWeek, GenerateRequest, MealType, Page, Plan, Profile, Progress, RecipeDetail, RecipeSummary,
+  Category, DayOfWeek, DraftJob, RecipeCommand, GenerateRequest, MealType, Page, Plan, Profile, Progress, RecipeDetail, RecipeSummary,
   ScoredRecipe, ShoppingList, WeeklyStats, WeightEntry,
 } from './models';
 
@@ -33,6 +33,27 @@ export class ApiService {
   recipe(id: number, servings?: number): Observable<RecipeDetail> {
     const params = servings ? new HttpParams().set('servings', servings) : undefined;
     return this.http.get<RecipeDetail>(`/api/recipes/${id}`, { params });
+  }
+
+  createRecipe(cmd: RecipeCommand): Observable<RecipeDetail> {
+    return this.http.post<RecipeDetail>('/api/recipes', cmd);
+  }
+
+  updateRecipe(id: number, cmd: RecipeCommand): Observable<RecipeDetail> {
+    return this.http.put<RecipeDetail>(`/api/recipes/${id}`, cmd);
+  }
+
+  deleteRecipe(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/recipes/${id}`);
+  }
+
+  /** Borrador con IA: devuelve 202 + id; después se consulta con draft(id) hasta que termine. */
+  startDraft(body: { ingredients: string[]; mealType: MealType | null; servings: number; notes: string }): Observable<DraftJob> {
+    return this.http.post<DraftJob>('/api/recipes/drafts', body);
+  }
+
+  draft(jobId: string): Observable<DraftJob> {
+    return this.http.get<DraftJob>(`/api/recipes/drafts/${jobId}`);
   }
 
   similar(id: number): Observable<ScoredRecipe[]> {

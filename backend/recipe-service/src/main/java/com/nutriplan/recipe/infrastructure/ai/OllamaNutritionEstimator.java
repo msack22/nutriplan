@@ -85,9 +85,9 @@ public class OllamaNutritionEstimator implements NutritionEstimator {
         return v == null ? null : Math.round(v * 10) / 10.0;
     }
 
-    record ChatResponse(Message message) {
+    public record ChatResponse(Message message) {
     }
 
-    record Message(String role, String content) {
+    public record Message(String role, String content) {
     }
 }

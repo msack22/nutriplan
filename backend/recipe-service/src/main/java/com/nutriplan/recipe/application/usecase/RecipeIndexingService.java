@@ -37,6 +37,22 @@ public class RecipeIndexingService {
         this.index = index;
     }
 
+    /** Genera/actualiza el embedding de UNA receta (al crearla o editarla). */
+    @Transactional
+    public void indexOne(long recipeId) {
+        Recipe recipe = recipes.findWithIngredientsById(recipeId).orElseThrow();
+        float[] vector = generator.embedDocument(recipe.toEmbeddingText());
+        RecipeEmbedding embedding = embeddingRepository.findById(recipeId)
+                .orElseGet(() -> new RecipeEmbedding(recipe, generator.modelName(), vector));
+        embedding.update(generator.modelName(), vector);
+        embeddingRepository.save(embedding);
+        index.upsert(recipeId, vector);
+    }
+
+    public void unindex(long recipeId) {
+        index.remove(recipeId);
+    }
+
     /** @param force si es true, regenera todos los embeddings aunque existan. */
     @Transactional
     public int reindex(boolean force) {

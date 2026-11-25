@@ -15,8 +15,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component;
 
 /**
- * Al arrancar: si la base está vacía importa las recetas desde el primer archivo que exista
- * (privado -> muestra pública) y luego sincroniza el índice vectorial.
+ * Al arrancar: si la base está vacía importa las recetas y luego sincroniza el índice vectorial.
+ * Cada entrada de {@code nutriplan.import.paths} puede ser un archivo o una CARPETA (se importan
+ * todos sus .json). Se usa la primera entrada que tenga datos: la carpeta privada (export + recetas
+ * extraídas de los PDFs) o, si no existe, la muestra pública del repo.
  * Se desactiva con {@code nutriplan.import.on-startup=false} (p.ej. en tests).
  */
 @Component
@@ -41,13 +43,30 @@ public class CatalogBootstrap implements ApplicationRunner {
         this.paths = properties.paths();
     }
 
+    /** Un archivo .json, o todos los .json de una carpeta (ordenados por nombre). */
+    static List<Path> jsonFiles(Path path) {
+        if (Files.isRegularFile(path)) {
+            return List.of(path);
+        }
+        if (!Files.isDirectory(path)) {
+            return List.of();
+        }
+        try (var stream = Files.list(path)) {
+            return stream.filter(p -> p.toString().endsWith(".json")).sorted().toList();
+        } catch (java.io.IOException e) {
+            return List.of();
+        }
+    }
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         if (recipes.count() == 0) {
-            Path file = paths.stream().map(Path::of).filter(Files::exists).findFirst().orElse(null);
-            if (file == null) {
-                log.warn("No hay archivo de recetas para importar. Buscado en: {}", paths);
-            } else {
+            List<Path> files = paths.stream().map(Path::of).map(CatalogBootstrap::jsonFiles)
+                    .filter(list -> !list.isEmpty()).findFirst().orElse(List.of());
+            if (files.isEmpty()) {
+                log.warn("No hay archivos de recetas para importar. Buscado en: {}", paths);
+            }
+            for (Path file : files) {
                 log.info("Importando recetas desde {}", file.toAbsolutePath());
                 importService.importRecipes(reader.read(file));
             }

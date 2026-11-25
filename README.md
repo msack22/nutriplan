@@ -61,7 +61,7 @@ flowchart LR
 |---|---|---|
 | **frontend** | SPA: plan semanal, recetas, stats, compras, perfil | Angular 22 (standalone, signals, control flow `@if/@for`), Reactive Forms, Chart.js, interceptores funcionales, guards, lazy loading |
 | **gateway** | Único punto de entrada. BFF: login y sesión; el navegador nunca ve tokens | Spring Cloud Gateway Server MVC, OAuth2 Client (PKCE), Spring Session + Redis, Token Relay, CSRF SPA, CSP |
-| **recipe-service** | Catálogo de 133 recetas, búsqueda clásica y semántica, importación | Spring Data JPA, Hibernate 7, Specifications, `@EntityGraph`, Flyway, MapStruct, embeddings (Ollama), LLM para estimar nutrición, Transactional Outbox |
+| **recipe-service** | Catálogo (141 recetas, incluidas las extraídas por OCR de los PDFs), recetas propias por usuario, borradores con IA, búsqueda clásica y semántica | Spring Data JPA, Hibernate 7, Specifications, `@EntityGraph`, Flyway, MapStruct, embeddings (Ollama), LLM para estimar nutrición, Transactional Outbox |
 | **planner-service** | Perfil (BMR/TDEE), plan semanal, generación automática, estadísticas, lista de compras | DDD (aggregate `WeeklyPlan`), Strategy pattern, RestClient + `@Retryable` (Spring 7), OAuth2 client credentials, Redis cache, Kafka consumer con DLT e idempotencia |
 | **pricing-service** | Precios de supermercados, job **todos los lunes**, estimación de la compra | Spring Cloud Function (deployable como **AWS Lambda**), `@Scheduled`, Resilience4j Circuit Breaker, Adapter pattern por cadena |
 | **common** | Starter interno compartido | Auto-configuration propia: validación JWT (firma/iss/aud), roles de Keycloak, `@PreAuthorize`, ProblemDetail (RFC 9457), audit log + correlation id |
@@ -73,6 +73,7 @@ flowchart LR
 
 - 🗓️ **Plan semanal** por usuario: desayuno, almuerzo, merienda y cena (cada comida es opcional), para N personas.
 - 🤖 **Generación automática** que se ajusta a tu objetivo de calorías, prioriza proteína y variedad, respeta ingredientes que no comés y entiende preferencias en lenguaje natural (*"comida casera con pollo"*).
+- ⭐ **Recetas propias**: cada usuario crea, edita y borra sus recetas (privadas). Con **✨ Generar con IA** escribís los ingredientes que tenés y un LLM local arma un borrador que después editás. Si no cargás macros, se estiman con IA.
 - 🔎 **Búsqueda semántica** de recetas con embeddings (*"algo liviano para la cena"*), además de filtros clásicos.
 - ⚖️ **Perfil y objetivos**: BMR (Mifflin-St Jeor), TDEE, déficit calórico, proteínas 1,6 g/kg, semanas estimadas a tu peso objetivo.
 - 📊 **Estadísticas** por semana: kcal y macros por día vs. objetivo, adherencia, cambio de peso proyectado, historial de semanas y de peso.

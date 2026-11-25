@@ -14,6 +14,7 @@ import { MacrosComponent } from '../../shared/macros.component';
       <h3>{{ r().title }}</h3>
       <app-macros [n]="r().nutritionPerServing" />
       <div class="tags">
+        @if (r().custom) { <span class="chip on">⭐ Mía</span> }
         @if (score() != null) { <span class="chip ai">{{ (score()! * 100).toFixed(0) }}% afinidad</span> }
         @if (r().nutritionSource === 'ESTIMATED') { <span class="chip ai">IA</span> }
         @for (t of r().tags.slice(0, 3); track t) { <span class="chip">{{ tagLabel[t] ?? t }}</span> }

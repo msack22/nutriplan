@@ -1,5 +1,6 @@
 package com.nutriplan.recipe.web;
 
+import com.nutriplan.common.security.CurrentUser;
 import com.nutriplan.recipe.application.dto.CandidateRequest;
 import com.nutriplan.recipe.application.dto.CategoryDto;
 import com.nutriplan.recipe.application.dto.PageResponse;
@@ -59,8 +60,10 @@ public class RecipeController {
             @RequestParam(required = false) DietTag tag,
             @RequestParam(required = false) Double maxKcal,
             @RequestParam(required = false) Double minProtein,
+            @RequestParam(defaultValue = "false") boolean mine,
             @PageableDefault(size = 24, sort = "title") Pageable pageable) {
-        return queries.search(new RecipeSearchCriteria(q, category, mealType, tag, maxKcal, minProtein), pageable);
+        return queries.search(new RecipeSearchCriteria(q, category, mealType, tag, maxKcal, minProtein, mine), pageable,
+                CurrentUser.id());
     }
 
     @GetMapping("/recipes/{id}")
@@ -68,13 +71,13 @@ public class RecipeController {
     public RecipeDetailDto detail(@PathVariable long id,
                                   @Parameter(description = "Porciones deseadas (por defecto, las de la receta)")
                                   @RequestParam(required = false) @Min(1) @Max(50) Integer servings) {
-        return queries.getDetail(id, servings);
+        return queries.getDetail(id, servings, CurrentUser.id());
     }
 
     @PostMapping("/recipes/batch")
     @Operation(summary = "Detalle de varias recetas (lo usa planner-service para la lista de compras)")
     public List<RecipeDetailDto> batch(@RequestBody @Size(max = 200) List<Long> ids) {
-        return queries.getDetails(ids);
+        return queries.getDetails(ids, CurrentUser.id());
     }
 
     @GetMapping("/recipes/semantic-search")
@@ -82,20 +85,20 @@ public class RecipeController {
     public List<ScoredRecipeDto> semanticSearch(@RequestParam @NotBlank @Size(max = 300) String query,
                                                 @RequestParam(required = false) MealType mealType,
                                                 @RequestParam(defaultValue = "10") @Min(1) @Max(50) int limit) {
-        return semantic.search(query, mealType, limit);
+        return semantic.search(query, mealType, limit, CurrentUser.id());
     }
 
     @GetMapping("/recipes/{id}/similar")
     @Operation(summary = "Recetas parecidas a una dada")
     public List<ScoredRecipeDto> similar(@PathVariable long id,
                                          @RequestParam(defaultValue = "6") @Min(1) @Max(30) int limit) {
-        return semantic.similarTo(id, limit);
+        return semantic.similarTo(id, limit, CurrentUser.id());
     }
 
     @PostMapping("/recipes/candidates")
     @Operation(summary = "Recetas candidatas para el generador automático de planes")
     public List<RecipeCandidateDto> candidates(@RequestBody @Valid CandidateRequest request) {
-        return semantic.candidates(request);
+        return semantic.candidates(request, CurrentUser.id());
     }
 
     @GetMapping("/categories")

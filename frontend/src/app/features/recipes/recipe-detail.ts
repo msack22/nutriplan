@@ -1,6 +1,6 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DAYS, DAY_LABEL, MEAL_LABEL, SOURCE_LABEL, TAG_LABEL, fmtQty } from '../../core/labels';
 import { DayOfWeek, MealType, RecipeDetail, ScoredRecipe } from '../../core/models';
@@ -22,9 +22,19 @@ import { RecipeCard } from './recipe-card';
           <div class="row">
             @for (t of r.tags; track t) { <span class="chip on">{{ tagLabel[t] ?? t }}</span> }
             <span class="chip" [class.ai]="r.nutritionSource === 'ESTIMATED'">{{ sourceLabel[r.nutritionSource] }}</span>
+            @if (r.custom) { <span class="chip on">⭐ Mi receta (privada)</span> }
           </div>
         </div>
+        @if (r.editable) {
+          <div class="row">
+            <a class="btn ghost" [routerLink]="['/recetas', r.id, 'editar']">✏️ Editar</a>
+            <button class="btn danger" (click)="remove(r)">Borrar</button>
+          </div>
+        }
       </div>
+      @if (r.custom && r.nutritionSource === 'UNKNOWN') {
+        <p class="muted small">⏳ Estamos estimando calorías y macros con IA; en unos minutos aparecen.</p>
+      }
 
       <div class="layout">
         <div class="grid">
@@ -103,6 +113,7 @@ export class RecipeDetailPage {
   private readonly api = inject(ApiService);
   private readonly toasts = inject(ToastService);
   private readonly week = inject(WeekStore);
+  private readonly router = inject(Router);
 
   protected readonly recipe = signal<RecipeDetail | null>(null);
   protected readonly similar = signal<ScoredRecipe[]>([]);
@@ -133,6 +144,14 @@ export class RecipeDetailPage {
     if (n < 1 || n > 50) return;
     this.servings.set(n);
     this.api.recipe(Number(this.id()), n).subscribe((r) => this.recipe.set(r));
+  }
+
+  remove(r: RecipeDetail): void {
+    if (!confirm(`¿Borrar "${r.title}"? Si estaba en un plan, ahí se mantiene.`)) return;
+    this.api.deleteRecipe(r.id).subscribe(() => {
+      this.toasts.show('Receta borrada', 'ok');
+      this.router.navigate(['/recetas']);
+    });
   }
 
   addToPlan(r: RecipeDetail): void {

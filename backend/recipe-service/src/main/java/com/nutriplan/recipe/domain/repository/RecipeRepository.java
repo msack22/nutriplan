@@ -38,6 +38,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecif
 
     Optional<Recipe> findByExternalId(String externalId);
 
+    /** Recetas que puede ver un usuario: catálogo + las suyas. */
+    @EntityGraph(attributePaths = "category")
+    @Query("select r from Recipe r where r.active = true and (r.ownerId is null or r.ownerId = :userId)")
+    List<Recipe> findVisibleTo(@org.springframework.data.repository.query.Param("userId") String userId);
+
     @Query("select distinct i.name from RecipeIngredient i where i.recipe.active = true order by i.name")
     List<String> findDistinctIngredientNames();
 

@@ -2,6 +2,7 @@ package com.nutriplan.recipe.infrastructure.ai;
 
 import com.nutriplan.recipe.domain.port.EmbeddingGenerator;
 import com.nutriplan.recipe.domain.port.NutritionEstimator;
+import com.nutriplan.recipe.domain.port.RecipeDraftGenerator;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -41,6 +42,12 @@ public class AiConfig {
                                                     ObjectMapper objectMapper) {
             return new OllamaNutritionEstimator(ollamaRestClient, props.ollama().chatModel(), objectMapper);
         }
+
+        @Bean
+        RecipeDraftGenerator ollamaRecipeDraftGenerator(RestClient ollamaRestClient, AiProperties props,
+                                                        ObjectMapper objectMapper) {
+            return new OllamaRecipeDraftGenerator(ollamaRestClient, props.ollama().chatModel(), objectMapper);
+        }
     }
 
     @Configuration
@@ -56,6 +63,11 @@ public class AiConfig {
         @Bean
         NutritionEstimator noopNutritionEstimator() {
             return (title, servings, lines) -> Optional.empty();
+        }
+
+        @Bean
+        RecipeDraftGenerator templateRecipeDraftGenerator() {
+            return new TemplateRecipeDraftGenerator();
         }
     }
 }

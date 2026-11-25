@@ -19,3 +19,22 @@ Solo ~17 recetas traían tabla nutricional. `OllamaNutritionEstimator` le pide a
 
 ## Modo sin IA
 `AI_PROVIDER=hashing` usa `HashingEmbeddingGenerator` (bag-of-words con feature hashing): determinístico, ideal para tests/CI.
+
+## Borradores de recetas con IA (trabajo asíncrono)
+
+`POST /api/recipes/drafts` recibe los ingredientes que tiene el usuario y responde **202 Accepted** con un id. Generar una receta con `qwen2.5:7b` en CPU tarda 2-4 minutos, así que:
+
+- el trabajo corre en un **virtual thread** y el frontend hace **polling** (`GET /api/recipes/drafts/{id}` cada 3 s con `timer + switchMap + takeWhile`);
+- un `Semaphore(1)` limita a un borrador a la vez contra el LLM y cada usuario puede tener uno en curso;
+- **prioridad**: `AiWorkload` pausa la estimación de nutrición de fondo mientras haya un usuario esperando;
+- el borrador **no se guarda**: el usuario lo revisa y lo confirma con el formulario (`POST /api/recipes`).
+
+Se probó también `qwen2.5:1.5b`: tarda ~1,5 min pero inventa cantidades ("2 cucharadas de zapallito"); se priorizó calidad.
+
+## Recetas propias y privacidad
+
+`recipe.owner_id` = `sub` del JWT (null = catálogo). La regla `Recipe.isVisibleTo(userId)` se aplica en el detalle, el listado (`RecipeSpecifications.visibleTo`), la búsqueda semántica, las candidatas del plan automático y el batch de la lista de compras. Para otro usuario una receta privada **no existe** (404).
+
+## Extracción de recetas desde PDFs (OCR)
+
+Varios PDFs del recetario eran imágenes. Se extrajo el texto con **Apple Vision** (OCR local, `VNRecognizeTextRequest` en español) y se cruzaron los títulos contra el catálogo: 8 recetas no estaban en el export y se agregaron (archivo privado en `data/private/`, que el importador lee completo).
